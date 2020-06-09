@@ -107,7 +107,7 @@ class StatelessService extends StatelessFunctionServiceBase  {
     this.config = config;
     for (var e in services.entries) {
       if (e.value.entityType() == StatelessEntityService.entity_type) {
-        _logger.v("Found ${StatelessEntityService.entity_type}");
+        _logger.v('Found ${StatelessEntityService.entity_type}');
         this.services[e.key] = e.value;
       }
     }
@@ -135,18 +135,30 @@ class StatelessService extends StatelessFunctionServiceBase  {
 
   Future<FunctionReply> runUnaryStatelessEntity(FunctionCommand request) {
     var service = services[request.serviceName];
-    _logger.d('Service found ${service.serviceName()}\n');
-    var entityHandler = StatelessEntityHandlerFactory.getOrCreate(service);
+    _logger.d('Service request ${service.serviceName()}\n');
+    return StatelessEntityHandlerFactory
+        .getOrCreate(request.serviceName, service)
+        .runUnary(request);
   }
 
   Stream<FunctionReply> runStreamedStatelessEntity(Stream<FunctionCommand> request) async* {
     await for (var stream in request) {
       _logger.d('Stream message received:\n$stream');
-      yield FunctionReply.getDefault();
+      var service = services[stream.serviceName];
+      _logger.d('Service request ${service.serviceName()}\n');
+      yield StatelessEntityHandlerFactory
+          .getOrCreate(stream.serviceName, service)
+          .runStreamed(stream);
     }
   }
 
-  Future<FunctionReply> runStreamedInStatelessEntity(Stream<FunctionCommand> request) {}
+  Future<FunctionReply> runStreamedInStatelessEntity(Stream<FunctionCommand> request) {
+    var r = request;
+    return r.first
+        .then((value) => StatelessEntityHandlerFactory
+            .getOrCreate(value.serviceName, services[value.serviceName])
+                .runStreamedIn(request));
+  }
 
   Stream<FunctionReply> runStreamedOutStatelessEntity(FunctionCommand request) {}
 
@@ -166,7 +178,7 @@ class EventSourcedService extends EventSourcedServiceBase {
     this.config = config;
     for (var e in services.entries) {
       if (e.value.entityType() == EventSourcedStatefulService.entity_type) {
-        _logger.v("Found ${EventSourcedStatefulService.entity_type}");
+        _logger.v('Found ${EventSourcedStatefulService.entity_type}');
         this.services[e.key] = e.value;
       }
     }

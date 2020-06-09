@@ -1,5 +1,9 @@
 import 'dart:mirrors';
+import 'package:cloudstate/src/generated/protocol/cloudstate/function.pb.dart';
 import 'package:cloudstate/src/services.dart';
+import 'package:protobuf/protobuf.dart';
+
+import '../cloudstate.dart';
 
 class StatelessEntityService implements CloudstateService {
   static const String entity_type =
@@ -45,29 +49,90 @@ class StatelessEntityService implements CloudstateService {
   }
 }
 
-class StatelessEntityHandler {
+class StatelessEntityHandlerFactory {
+  static final _logger = Logger(
+    filter: CloudstateLogFilter(),
+    printer: LogfmtPrinter(),
+    output: SimpleConsoleOutput(),
+  );
+
+  static final Map<String, StatelessEntityHandlerImpl> _services = {};
+
+  static StatelessEntityHandler getOrCreate(String serviceName, StatelessEntityService service) {
+    if (_services.containsKey(serviceName)) {
+      _logger.d('StatelessEntityHandler for service[$serviceName] is cached');
+      return _services[serviceName];
+    }
+    _logger.d('Creating new StatelessEntityHandler for service: $serviceName');
+    var handler = StatelessEntityHandlerImpl(serviceName, service);
+    _services[serviceName] = handler;
+    return handler;
+  }
 }
 
-class StatelessEntityHandlerFactory {
-  static StatelessEntityHandler getOrCreate(StatelessEntityService service) {
+class StatelessEntityHandler {
+  Future<FunctionReply> runUnary(FunctionCommand request) {}
+  FunctionReply runStreamed(FunctionCommand stream) {}
+  FunctionReply  runStreamedIn(Stream<Object> events) {}
 
+}
+
+class StatelessEntityHandlerImpl implements StatelessEntityHandler {
+  final String serviceName;
+  final StatelessEntityService service;
+
+  StatelessEntityHandlerImpl(this.serviceName, this.service);
+
+  @override
+  Future<FunctionReply> runUnary(FunctionCommand request) {
+    // TODO: implement runUnary
+    throw UnimplementedError();
   }
+
+  @override
+  FunctionReply runStreamed(FunctionCommand stream) {
+    // TODO: implement runStreamed
+    return FunctionReply.getDefault();
+  }
+
+  @override
+  FunctionReply runStreamedIn(Stream<Object> events) {
+    // TODO: implement runStreamedIn
+    throw UnimplementedError();
+  }
+
 }
 
 class StatelessEntity {}
 
-class StatelessCommandHandler {
+class UnaryCommandHandler {
   final String name;
-  final bool unary;
-  final bool streamed;
-  final bool stream_in;
-  final bool stream_out;
-  const StatelessCommandHandler(
+  const UnaryCommandHandler(
       [
-        this.name = '',
-        this.unary = true,
-        this.streamed = false,
-        this.stream_in = false,
-        this.stream_out = false
+        this.name = ''
+      ]);
+}
+
+class StreamInCommandHandler {
+  final String name;
+  const StreamInCommandHandler(
+      [
+        this.name = ''
+      ]);
+}
+
+class StreamOutCommandHandler {
+  final String name;
+  const StreamOutCommandHandler(
+      [
+        this.name = ''
+      ]);
+}
+
+class StreamedCommandHandler {
+  final String name;
+  const StreamedCommandHandler(
+      [
+        this.name = ''
       ]);
 }
